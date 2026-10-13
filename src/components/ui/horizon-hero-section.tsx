@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ChevronDown, Sparkles } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -62,11 +63,9 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       const { current: refs } = threeRefs;
       if (!canvasRef.current) return;
       
-      // Scene setup - deep pitch black space
       refs.scene = new THREE.Scene();
       refs.scene.fog = new THREE.FogExp2(0x000000, 0.00025);
 
-      // Camera
       refs.camera = new THREE.PerspectiveCamera(
         68,
         window.innerWidth / window.innerHeight,
@@ -75,7 +74,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       );
       refs.camera.position.set(0, 16, 320);
 
-      // WebGL Renderer
       refs.renderer = new THREE.WebGLRenderer({
         canvas: canvasRef.current,
         antialias: true,
@@ -84,23 +82,20 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       refs.renderer.setSize(window.innerWidth, window.innerHeight);
       refs.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       refs.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      refs.renderer.toneMappingExposure = 0.5; // Controlled exposure to prevent white blowout
+      refs.renderer.toneMappingExposure = 0.5;
 
-      // Post-processing
       refs.composer = new EffectComposer(refs.renderer);
       const renderPass = new RenderPass(refs.scene, refs.camera);
       refs.composer.addPass(renderPass);
 
-      // Bloom tuned so it never over-saturates into white
       const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        0.45,  // Gentle glowing bloom
+        0.45,
         0.3,
-        0.88   // High threshold to protect highlights
+        0.88
       );
       refs.composer.addPass(bloomPass);
 
-      // Create celestial scene elements
       createStarField();
       createNebula();
       createMountains();
@@ -133,11 +128,11 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
           const color = new THREE.Color();
           const colorChoice = Math.random();
           if (colorChoice < 0.7) {
-            color.setHSL(0.55, 0.4, 0.9); // Starlight cyan
+            color.setHSL(0.55, 0.4, 0.9);
           } else if (colorChoice < 0.9) {
-            color.setHSL(0.72, 0.5, 0.9); // Cosmic indigo
+            color.setHSL(0.72, 0.5, 0.9);
           } else {
-            color.setHSL(0.08, 0.6, 0.95); // Golden spark
+            color.setHSL(0.08, 0.6, 0.95);
           }
           
           colors[j * 3] = color.r;
@@ -203,8 +198,8 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       const material = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
-          color1: { value: new THREE.Color(0x0284c7) }, // Deep cyan
-          color2: { value: new THREE.Color(0x4f46e5) }, // Deep indigo
+          color1: { value: new THREE.Color(0x0284c7) },
+          color2: { value: new THREE.Color(0x4f46e5) },
           opacity: { value: 0.25 },
         },
         vertexShader: `
@@ -253,7 +248,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       const { current: refs } = threeRefs;
       if (!refs.scene) return;
       
-      // Mountains kept strictly along the bottom horizon
       const layers = [
         { distance: -60, height: 40, color: 0x070b14, opacity: 1, baseOffsetY: -75 },
         { distance: -110, height: 55, color: 0x0c1427, opacity: 0.85, baseOffsetY: -85 },
@@ -261,7 +255,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         { distance: -220, height: 85, color: 0x082f49, opacity: 0.5, baseOffsetY: -105 },
       ];
 
-      layers.forEach((layer, index) => {
+      layers.forEach((layer) => {
         const points = [];
         const segments = 60;
         
@@ -290,7 +284,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         mountain.userData = { 
           baseZ: layer.distance, 
           baseY: layer.baseOffsetY,
-          index 
         };
         refs.scene?.add(mountain);
         refs.mountains.push(mountain);
@@ -340,7 +333,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       
       const time = Date.now() * 0.001;
 
-      // Update stars
       refs.stars.forEach((starField) => {
         const mat = starField.material as THREE.ShaderMaterial;
         if (mat.uniforms && mat.uniforms.time) {
@@ -348,7 +340,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         }
       });
 
-      // Update nebula
       if (refs.nebula) {
         const mat = refs.nebula.material as THREE.ShaderMaterial;
         if (mat.uniforms && mat.uniforms.time) {
@@ -356,7 +347,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         }
       }
 
-      // Smooth camera interpolation
       if (refs.camera && refs.targetCameraX !== undefined) {
         const smoothingFactor = 0.05;
         smoothCameraPos.current.x += (refs.targetCameraX - smoothCameraPos.current.x) * smoothingFactor;
@@ -372,7 +362,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         refs.camera.lookAt(0, -10, -600);
       }
 
-      // Parallax mountain horizon
       refs.mountains.forEach((mountain, i) => {
         const parallaxFactor = 1 + i * 0.4;
         mountain.position.x = Math.sin(time * 0.09) * 1.5 * parallaxFactor;
@@ -462,7 +451,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
     };
   }, [isReady]);
 
-  // Smooth scroll flight: Camera stays in safe stellar bounds (z: 320 -> 200) without blowing out
+  // Smooth scroll flight: Page 1 (Name) -> Page 2 (Quote)
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -477,12 +466,13 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
 
       const { current: refs } = threeRefs;
       
-      // Camera gracefully moves forward in starfield, never entering the glowing atmosphere core!
+      // Camera smoothly glides forward:
+      // Page 1 (0 -> 0.45): z=320 -> z=260
+      // Page 2 (0.45 -> 1.0): z=260 -> z=180
       refs.targetCameraX = 0;
-      refs.targetCameraY = 16 + rawProgress * 10;
-      refs.targetCameraZ = 320 - rawProgress * 120; // safe range 320 -> 200
+      refs.targetCameraY = 16 + rawProgress * 12;
+      refs.targetCameraZ = 320 - rawProgress * 135; // safe range 320 -> 185
 
-      // Mountains stay grounded at the horizon
       refs.mountains.forEach((mountain, i) => {
         const speed = 1 + i * 0.6;
         mountain.position.z = mountain.userData.baseZ + scrollY * speed * 0.25;
@@ -499,6 +489,15 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const scrollToPhase2 = () => {
+    if (!containerRef.current) return;
+    const windowHeight = window.innerHeight;
+    const targetY = (containerRef.current.offsetHeight - windowHeight) * 0.55;
+    window.scrollTo({ top: targetY, behavior: 'smooth' });
+  };
+
+  const isPage2Active = scrollProgress >= 0.45;
+
   return (
     <div ref={containerRef} className="hero-container cosmos-style relative w-full">
       <canvas ref={canvasRef} className="hero-canvas" />
@@ -513,15 +512,25 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         <div className="vertical-text">NABNIT</div>
       </div>
 
-      {/* Hero Content Overlay - Pure and focused on Nabnit's identity & motto */}
+      {/* FIXED VIEWPORT FRAME CONTAINING PAGE 1 & PAGE 2 */}
       <div 
         className={`hero-sticky-frame transition-opacity duration-500 ${
           scrollProgress > 0.95 ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
-        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center text-center">
+        {/* ========================================================
+            PAGE 1: ULTRA-VISIBLE NAME (NABNIT ⇄ ナブニット single-line)
+            Active when scrollProgress < 0.45
+            ======================================================== */}
+        <div
+          className={`transition-all duration-700 flex flex-col items-center justify-center text-center w-full max-w-5xl px-4 absolute ${
+            !isPage2Active
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-95 -translate-y-12 pointer-events-none'
+          }`}
+        >
           {/* Identity Tag */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-cyan-500/40 bg-cyan-950/60 backdrop-blur-md text-xs font-mono text-cyan-300 tracking-wider shadow-[0_0_25px_rgba(6,182,212,0.35)]">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-cyan-400/50 bg-cyan-950/70 backdrop-blur-md text-xs font-mono text-cyan-300 tracking-wider shadow-[0_0_25px_rgba(6,182,212,0.4)]">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
             <span>GITHUB PROFILE // NAIKNABNIT</span>
             <span className="ml-2 pl-2 border-l border-cyan-500/40 text-[10px] text-cyan-400/90 font-semibold">
@@ -529,11 +538,11 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
             </span>
           </div>
 
-          {/* DYNAMIC TITLE: Timely Transition between NABNIT (EN) and Extracted Katakana Letters ナブニット (JP) */}
-          <div className="relative min-h-[140px] md:min-h-[180px] flex items-center justify-center w-full my-1">
-            {/* English Typography */}
+          {/* DYNAMIC TITLE: Ultra-visible, single-line guaranteed */}
+          <div className="relative min-h-[140px] md:min-h-[180px] flex items-center justify-center w-full my-2 overflow-visible">
+            {/* English Typography - High Luminance */}
             <h1
-              className={`hero-title transition-all duration-700 absolute font-black tracking-[0.25em] ${
+              className={`hero-title transition-all duration-700 absolute font-black tracking-[0.22em] text-center w-full whitespace-nowrap select-none ${
                 !isJapanese
                   ? 'opacity-100 scale-100 translate-y-0'
                   : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'
@@ -542,11 +551,11 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
               NABNIT
             </h1>
 
-            {/* Extracted Japanese Typography - Rendered with Styled Japanese Font, always 100% visible! */}
+            {/* Extracted Japanese Typography - Strictly single line with whitespace-nowrap */}
             <h1
               lang="ja"
               style={{ fontFamily: "'Noto Sans JP', 'Plus Jakarta Sans', sans-serif" }}
-              className={`hero-title transition-all duration-700 absolute font-black tracking-[0.3em] ${
+              className={`hero-title transition-all duration-700 absolute font-black tracking-[0.1em] md:tracking-[0.16em] text-center w-full whitespace-nowrap select-none ${
                 isJapanese
                   ? 'opacity-100 scale-100 translate-y-0'
                   : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
@@ -556,60 +565,106 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
             </h1>
           </div>
 
-          {/* Core Motto - "Curious by nature. Builder by choice." */}
-          <div className="mt-4 flex flex-col items-center gap-2">
-            <blockquote className="text-xl md:text-3xl font-light tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-indigo-200 italic filter drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">
-              "Curious by nature. Builder by choice."
-            </blockquote>
-            <p className="text-sm md:text-base text-slate-300 font-normal tracking-wide mt-1">
+          {/* Subtitle Details */}
+          <div className="mt-4 flex flex-col items-center gap-1.5">
+            <p className="text-base md:text-xl text-slate-200 font-medium tracking-wide">
               Computer Science Engineering • Developer • Problem Solver
             </p>
-            <div className="inline-flex items-center gap-2 text-xs font-mono text-cyan-400/80 tracking-widest mt-1">
+            <div className="inline-flex items-center gap-2.5 text-xs font-mono text-cyan-400/90 tracking-widest mt-1">
               <span>AI</span>
-              <span>//</span>
+              <span className="text-slate-600">//</span>
               <span>FULL STACK</span>
-              <span>//</span>
+              <span className="text-slate-600">//</span>
               <span>CLOUD</span>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            {onScrollToContent && (
-              <button 
-                onClick={onScrollToContent}
-                className="px-6 py-2.5 rounded-full border border-cyan-400/50 bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-200 text-sm font-mono tracking-wide transition-all duration-300 backdrop-blur-md cursor-pointer hover:shadow-[0_0_30px_rgba(6,182,212,0.45)] hover:scale-105"
-              >
-                Explore Portfolio ↓
-              </button>
-            )}
-
+          {/* Manual switch button */}
+          <div className="mt-7 flex items-center gap-3">
             <button
               onClick={() => setIsJapanese(!isJapanese)}
-              className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/70 hover:border-cyan-500/40 text-xs font-mono text-slate-300 hover:text-white transition-all backdrop-blur-sm cursor-pointer"
-              title="Toggle English / Japanese Letters"
+              className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/80 hover:border-cyan-500/50 text-xs font-mono text-slate-300 hover:text-white transition-all backdrop-blur-md cursor-pointer hover:shadow-[0_0_20px_rgba(6,182,212,0.25)]"
+              title="Toggle English / Japanese"
             >
               Switch {isJapanese ? 'English (NABNIT)' : 'Japanese (ナブニット)'}
             </button>
+
+            <button
+              onClick={scrollToPhase2}
+              className="px-5 py-2 rounded-full border border-cyan-400/40 bg-cyan-500/15 hover:bg-cyan-500/30 text-xs font-mono text-cyan-200 transition-all backdrop-blur-md cursor-pointer hover:shadow-[0_0_20px_rgba(6,182,212,0.35)]"
+            >
+              Scroll to Motto ↓
+            </button>
+          </div>
+        </div>
+
+        {/* ========================================================
+            PAGE 2: THE QUOTE DISPLAY
+            Active when scrollProgress >= 0.45
+            ======================================================== */}
+        <div
+          className={`transition-all duration-700 flex flex-col items-center justify-center text-center w-full max-w-4xl px-4 absolute ${
+            isPage2Active
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-95 translate-y-12 pointer-events-none'
+          }`}
+        >
+          {/* Quote Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 mb-6 rounded-full border border-indigo-400/50 bg-indigo-950/60 backdrop-blur-md text-xs font-mono text-indigo-300 tracking-wider shadow-[0_0_25px_rgba(99,102,241,0.35)]">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span>CORE PHILOSOPHY // MISSION</span>
+          </div>
+
+          {/* The Iconic Quote */}
+          <blockquote className="quote-display my-2">
+            "Curious by nature. Builder by choice."
+          </blockquote>
+
+          {/* Subtitle */}
+          <div className="mt-5 flex flex-col items-center gap-1.5 max-w-2xl">
+            <p className="text-base md:text-lg text-slate-300 font-light leading-relaxed">
+              Engineering intelligent multi-agent architectures, scalable web systems, and practical digital products.
+            </p>
+            <span className="text-xs font-mono text-cyan-400/80 tracking-widest mt-2 uppercase">
+              NABNIT NAIK // CRAFTING THE FUTURE
+            </span>
+          </div>
+
+          {/* Action CTA */}
+          <div className="mt-8 flex items-center justify-center gap-4">
+            {onScrollToContent && (
+              <button 
+                onClick={onScrollToContent}
+                className="px-7 py-3 rounded-full border border-cyan-400/60 bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-100 text-sm font-mono tracking-wide transition-all duration-300 backdrop-blur-md cursor-pointer hover:shadow-[0_0_35px_rgba(6,182,212,0.5)] hover:scale-105"
+              >
+                Explore Portfolio & Repositories ↓
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Scroll flight indicator */}
-      <div ref={scrollProgressRef} className="scroll-progress" style={{ visibility: 'hidden' }}>
-        <div className="scroll-text">SCROLL FLIGHT</div>
-        <div className="progress-track">
-          <div 
-            className="progress-fill" 
-            style={{ width: `${Math.min(scrollProgress * 100, 100)}%` }}
-          />
+      {/* ========================================================
+          21st.dev STYLE INTERACTIVE SCROLL ANIMATION INDICATOR
+          ======================================================== */}
+      <div 
+        onClick={isPage2Active ? onScrollToContent : scrollToPhase2}
+        className="fixed bottom-7 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 cursor-pointer group select-none"
+        title={isPage2Active ? "Scroll to Portfolio" : "Scroll to Motto"}
+      >
+        {/* Animated Mouse Capsule */}
+        <div className="w-6 h-10 rounded-full border-2 border-cyan-400/60 bg-slate-950/70 backdrop-blur-md flex items-start justify-center p-1.5 shadow-[0_0_20px_rgba(6,182,212,0.35)] group-hover:border-cyan-300 group-hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] transition-all">
+          <div className="w-1.5 h-2.5 rounded-full bg-cyan-400 animate-scroll-pill shadow-[0_0_8px_#38bdf8]" />
         </div>
-        <div className="section-counter">
-          {Math.round(scrollProgress * 100)}%
+
+        {/* Bouncing Chevron & Cue */}
+        <div className="flex items-center gap-1 text-[11px] font-mono text-cyan-300/80 group-hover:text-cyan-200 tracking-wider">
+          <span>{isPage2Active ? 'EXPLORE PORTFOLIO' : 'PHASE 01 / 02'}</span>
+          <ChevronDown className="w-3.5 h-3.5 animate-bounce text-cyan-400" />
         </div>
       </div>
 
-      {/* Virtual Scroll Height Track for prolonged space flight */}
+      {/* Virtual Scroll Height Track for 2-page glide */}
       <div className="scroll-sections-track">
         <div className="content-section-virtual" />
         <div className="content-section-virtual" />
