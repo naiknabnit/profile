@@ -19,19 +19,17 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
   const scrollProgressRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const smoothCameraPos = useRef({ x: 0, y: 15, z: 320 });
+  const smoothCameraPos = useRef({ x: 0, y: 16, z: 320 });
   
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [currentSection, setCurrentSection] = useState(0);
   const [isReady, setIsReady] = useState(false);
-  const [isJapaneseName, setIsJapaneseName] = useState(false);
-  const totalSections = 2; // 3 phases: 0, 1, 2
+  const [isJapanese, setIsJapanese] = useState(false);
   
-  // Timely transition of name NABNIT to Japanese letters
+  // Timely transition of NABNIT to extracted Japanese letters ナブニット
   useEffect(() => {
     const interval = setInterval(() => {
-      setIsJapaneseName((prev) => !prev);
-    }, 3800);
+      setIsJapanese((prev) => !prev);
+    }, 3500);
     return () => clearInterval(interval);
   }, []);
 
@@ -47,7 +45,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
     targetCameraX?: number;
     targetCameraY?: number;
     targetCameraZ?: number;
-    locations?: number[];
   }>({
     scene: null,
     camera: null,
@@ -65,21 +62,20 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       const { current: refs } = threeRefs;
       if (!canvasRef.current) return;
       
-      // Scene setup
+      // Scene setup - deep pitch black space
       refs.scene = new THREE.Scene();
-      refs.scene.fog = new THREE.FogExp2(0x000000, 0.0003);
+      refs.scene.fog = new THREE.FogExp2(0x000000, 0.00025);
 
       // Camera
       refs.camera = new THREE.PerspectiveCamera(
-        70,
+        68,
         window.innerWidth / window.innerHeight,
         0.1,
-        2200
+        2500
       );
-      refs.camera.position.z = 320;
-      refs.camera.position.y = 15;
+      refs.camera.position.set(0, 16, 320);
 
-      // Renderer
+      // WebGL Renderer
       refs.renderer = new THREE.WebGLRenderer({
         canvas: canvasRef.current,
         antialias: true,
@@ -88,18 +84,19 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       refs.renderer.setSize(window.innerWidth, window.innerHeight);
       refs.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       refs.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      refs.renderer.toneMappingExposure = 0.65;
+      refs.renderer.toneMappingExposure = 0.5; // Controlled exposure to prevent white blowout
 
       // Post-processing
       refs.composer = new EffectComposer(refs.renderer);
       const renderPass = new RenderPass(refs.scene, refs.camera);
       refs.composer.addPass(renderPass);
 
+      // Bloom tuned so it never over-saturates into white
       const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        0.75,
-        0.35,
-        0.82
+        0.45,  // Gentle glowing bloom
+        0.3,
+        0.88   // High threshold to protect highlights
       );
       refs.composer.addPass(bloomPass);
 
@@ -108,9 +105,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       createNebula();
       createMountains();
       createAtmosphere();
-      getLocation();
 
-      // Start animation loop
       animate();
       setIsReady(true);
     };
@@ -118,7 +113,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
     const createStarField = () => {
       const { current: refs } = threeRefs;
       if (!refs.scene) return;
-      const starCount = 5500;
+      const starCount = 5000;
       
       for (let i = 0; i < 3; i++) {
         const geometry = new THREE.BufferGeometry();
@@ -127,7 +122,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         const sizes = new Float32Array(starCount);
 
         for (let j = 0; j < starCount; j++) {
-          const radius = 250 + Math.random() * 850;
+          const radius = 260 + Math.random() * 850;
           const theta = Math.random() * Math.PI * 2;
           const phi = Math.acos(Math.random() * 2 - 1);
 
@@ -138,11 +133,11 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
           const color = new THREE.Color();
           const colorChoice = Math.random();
           if (colorChoice < 0.7) {
-            color.setHSL(0.55, 0.4, 0.85); // soft cyan-blue
+            color.setHSL(0.55, 0.4, 0.9); // Starlight cyan
           } else if (colorChoice < 0.9) {
-            color.setHSL(0.75, 0.5, 0.85); // indigo
+            color.setHSL(0.72, 0.5, 0.9); // Cosmic indigo
           } else {
-            color.setHSL(0.08, 0.6, 0.9); // golden starlight
+            color.setHSL(0.08, 0.6, 0.95); // Golden spark
           }
           
           colors[j * 3] = color.r;
@@ -171,23 +166,20 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
             void main() {
               vColor = color;
               vec3 pos = position;
-              
-              float angle = time * 0.04 * (1.0 - depth * 0.25);
+              float angle = time * 0.035 * (1.0 - depth * 0.25);
               mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
               pos.xy = rot * pos.xy;
               
               vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-              gl_PointSize = size * (320.0 / -mvPosition.z);
+              gl_PointSize = size * (300.0 / -mvPosition.z);
               gl_Position = projectionMatrix * mvPosition;
             }
           `,
           fragmentShader: `
             varying vec3 vColor;
-            
             void main() {
               float dist = length(gl_PointCoord - vec2(0.5));
               if (dist > 0.5) discard;
-              
               float opacity = 1.0 - smoothstep(0.0, 0.5, dist);
               gl_FragColor = vec4(vColor, opacity);
             }
@@ -207,13 +199,13 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       const { current: refs } = threeRefs;
       if (!refs.scene) return;
       
-      const geometry = new THREE.PlaneGeometry(8000, 4200, 100, 100);
+      const geometry = new THREE.PlaneGeometry(6000, 3200, 80, 80);
       const material = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
-          color1: { value: new THREE.Color(0x06b6d4) }, // cyan neon
-          color2: { value: new THREE.Color(0x6366f1) }, // indigo
-          opacity: { value: 0.35 },
+          color1: { value: new THREE.Color(0x0284c7) }, // Deep cyan
+          color2: { value: new THREE.Color(0x4f46e5) }, // Deep indigo
+          opacity: { value: 0.25 },
         },
         vertexShader: `
           varying vec2 vUv;
@@ -223,7 +215,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
           void main() {
             vUv = uv;
             vec3 pos = position;
-            float elevation = sin(pos.x * 0.01 + time) * cos(pos.y * 0.01 + time) * 22.0;
+            float elevation = sin(pos.x * 0.01 + time) * cos(pos.y * 0.01 + time) * 18.0;
             pos.z += elevation;
             vElevation = elevation;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -238,9 +230,9 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
           varying float vElevation;
           
           void main() {
-            float mixFactor = sin(vUv.x * 9.0 + time * 0.6) * cos(vUv.y * 9.0 + time * 0.6);
+            float mixFactor = sin(vUv.x * 8.0 + time * 0.5) * cos(vUv.y * 8.0 + time * 0.5);
             vec3 color = mix(color1, color2, mixFactor * 0.5 + 0.5);
-            float alpha = opacity * (1.0 - length(vUv - 0.5) * 1.8);
+            float alpha = opacity * (1.0 - length(vUv - 0.5) * 1.9);
             alpha *= 1.0 + vElevation * 0.01;
             gl_FragColor = vec4(color, max(0.0, alpha));
           }
@@ -252,8 +244,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       });
 
       const nebula = new THREE.Mesh(geometry, material);
-      nebula.position.z = -950;
-      nebula.position.y = 80;
+      nebula.position.set(0, 60, -900);
       refs.scene.add(nebula);
       refs.nebula = nebula;
     };
@@ -262,12 +253,12 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       const { current: refs } = threeRefs;
       if (!refs.scene) return;
       
-      // Position mountains at the lower horizon (y <= -60) so center text is never blocked!
+      // Mountains kept strictly along the bottom horizon
       const layers = [
-        { distance: -60, height: 45, color: 0x090d16, opacity: 1, baseOffsetY: -65 },
-        { distance: -110, height: 60, color: 0x0f172a, opacity: 0.85, baseOffsetY: -75 },
-        { distance: -160, height: 75, color: 0x1e1b4b, opacity: 0.7, baseOffsetY: -85 },
-        { distance: -220, height: 90, color: 0x0c4a6e, opacity: 0.5, baseOffsetY: -95 },
+        { distance: -60, height: 40, color: 0x070b14, opacity: 1, baseOffsetY: -75 },
+        { distance: -110, height: 55, color: 0x0c1427, opacity: 0.85, baseOffsetY: -85 },
+        { distance: -160, height: 70, color: 0x111c38, opacity: 0.7, baseOffsetY: -95 },
+        { distance: -220, height: 85, color: 0x082f49, opacity: 0.5, baseOffsetY: -105 },
       ];
 
       layers.forEach((layer, index) => {
@@ -277,8 +268,8 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         for (let i = 0; i <= segments; i++) {
           const x = (i / segments - 0.5) * 1200;
           const y = Math.sin(i * 0.12) * layer.height + 
-                   Math.sin(i * 0.06) * layer.height * 0.4 +
-                   Math.random() * layer.height * 0.15;
+                   Math.sin(i * 0.06) * layer.height * 0.35 +
+                   Math.random() * layer.height * 0.12;
           points.push(new THREE.Vector2(x, y));
         }
         
@@ -295,8 +286,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         });
 
         const mountain = new THREE.Mesh(geometry, material);
-        mountain.position.z = layer.distance;
-        mountain.position.y = layer.baseOffsetY;
+        mountain.position.set(0, layer.baseOffsetY, layer.distance);
         mountain.userData = { 
           baseZ: layer.distance, 
           baseY: layer.baseOffsetY,
@@ -311,7 +301,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       const { current: refs } = threeRefs;
       if (!refs.scene) return;
       
-      const geometry = new THREE.SphereGeometry(650, 32, 32);
+      const geometry = new THREE.SphereGeometry(750, 32, 32);
       const material = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
@@ -319,7 +309,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         vertexShader: `
           varying vec3 vNormal;
           varying vec3 vPosition;
-          
           void main() {
             vNormal = normalize(normalMatrix * normal);
             vPosition = position;
@@ -330,13 +319,10 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
           varying vec3 vNormal;
           varying vec3 vPosition;
           uniform float time;
-          
           void main() {
-            float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
-            vec3 atmosphere = vec3(0.02, 0.7, 0.9) * intensity;
-            float pulse = sin(time * 1.5) * 0.08 + 0.92;
-            atmosphere *= pulse;
-            gl_FragColor = vec4(atmosphere, intensity * 0.3);
+            float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+            vec3 atmosphere = vec3(0.02, 0.5, 0.8) * intensity;
+            gl_FragColor = vec4(atmosphere, intensity * 0.18);
           }
         `,
         side: THREE.BackSide,
@@ -354,7 +340,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       
       const time = Date.now() * 0.001;
 
-      // Update stars rotation
+      // Update stars
       refs.stars.forEach((starField) => {
         const mat = starField.material as THREE.ShaderMaterial;
         if (mat.uniforms && mat.uniforms.time) {
@@ -362,7 +348,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         }
       });
 
-      // Update nebula wave
+      // Update nebula
       if (refs.nebula) {
         const mat = refs.nebula.material as THREE.ShaderMaterial;
         if (mat.uniforms && mat.uniforms.time) {
@@ -372,14 +358,13 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
 
       // Smooth camera interpolation
       if (refs.camera && refs.targetCameraX !== undefined) {
-        const smoothingFactor = 0.045;
-        
+        const smoothingFactor = 0.05;
         smoothCameraPos.current.x += (refs.targetCameraX - smoothCameraPos.current.x) * smoothingFactor;
-        smoothCameraPos.current.y += ((refs.targetCameraY ?? 15) - smoothCameraPos.current.y) * smoothingFactor;
+        smoothCameraPos.current.y += ((refs.targetCameraY ?? 16) - smoothCameraPos.current.y) * smoothingFactor;
         smoothCameraPos.current.z += ((refs.targetCameraZ ?? 320) - smoothCameraPos.current.z) * smoothingFactor;
         
-        const floatX = Math.sin(time * 0.08) * 1.5;
-        const floatY = Math.cos(time * 0.12) * 0.8;
+        const floatX = Math.sin(time * 0.08) * 1.2;
+        const floatY = Math.cos(time * 0.12) * 0.6;
         
         refs.camera.position.x = smoothCameraPos.current.x + floatX;
         refs.camera.position.y = smoothCameraPos.current.y + floatY;
@@ -387,12 +372,12 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         refs.camera.lookAt(0, -10, -600);
       }
 
-      // Subtle parallax mountain breathing - always at bottom horizon
+      // Parallax mountain horizon
       refs.mountains.forEach((mountain, i) => {
         const parallaxFactor = 1 + i * 0.4;
-        mountain.position.x = Math.sin(time * 0.09) * 2 * parallaxFactor;
-        const baseY = mountain.userData.baseY ?? -70;
-        mountain.position.y = baseY + (Math.cos(time * 0.12) * 1 * parallaxFactor);
+        mountain.position.x = Math.sin(time * 0.09) * 1.5 * parallaxFactor;
+        const baseY = mountain.userData.baseY ?? -75;
+        mountain.position.y = baseY + (Math.cos(time * 0.12) * 0.8 * parallaxFactor);
       });
 
       if (refs.composer) {
@@ -441,15 +426,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
     };
   }, []);
 
-  const getLocation = () => {
-    const { current: refs } = threeRefs;
-    const locations: number[] = [];
-    refs.mountains.forEach((mountain, i) => {
-      locations[i] = mountain.position.z;
-    });
-    refs.locations = locations;
-  };
-
   // GSAP initial fade-ins
   useEffect(() => {
     if (!isReady) return;
@@ -486,13 +462,12 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
     };
   }, [isReady]);
 
-  // Extended scroll handling through 3 distinct cinematic phases
+  // Smooth scroll flight: Camera stays in safe stellar bounds (z: 320 -> 200) without blowing out
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
       
-      // Calculate scroll progress within hero container
       if (!containerRef.current) return;
       const containerHeight = containerRef.current.offsetHeight;
       const maxScrollHero = Math.max(containerHeight - windowHeight, 1);
@@ -500,41 +475,21 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       
       setScrollProgress(rawProgress);
 
-      // Section 0: 0.00 -> 0.33 (NABNIT)
-      // Section 1: 0.33 -> 0.66 (AGENTIC AI)
-      // Section 2: 0.66 -> 1.00 (FULL STACK)
-      const mappedSection = rawProgress < 0.35 ? 0 : rawProgress < 0.70 ? 1 : 2;
-      setCurrentSection(mappedSection);
-
       const { current: refs } = threeRefs;
       
-      // Extended Camera positions for prolonged flight
-      const cameraPositions = [
-        { x: 0, y: 15, z: 320 },   // Phase 0: NABNIT (Wide stellar expanse)
-        { x: 0, y: 28, z: 40 },    // Phase 1: AGENTIC AI (Flying through the glowing core)
-        { x: 0, y: 40, z: -320 },  // Phase 2: FULL STACK & CLOUD (Ascending toward the horizon)
-      ];
+      // Camera gracefully moves forward in starfield, never entering the glowing atmosphere core!
+      refs.targetCameraX = 0;
+      refs.targetCameraY = 16 + rawProgress * 10;
+      refs.targetCameraZ = 320 - rawProgress * 120; // safe range 320 -> 200
 
-      const progressNormalized = rawProgress * 2; // [0 -> 2]
-      const currentIdx = Math.min(Math.floor(progressNormalized), 1);
-      const frac = progressNormalized - currentIdx;
-
-      const p0 = cameraPositions[currentIdx];
-      const p1 = cameraPositions[currentIdx + 1] || p0;
-
-      refs.targetCameraX = p0.x + (p1.x - p0.x) * frac;
-      refs.targetCameraY = p0.y + (p1.y - p0.y) * frac;
-      refs.targetCameraZ = p0.z + (p1.z - p0.z) * frac;
-
-      // Gentle mountain parallax
+      // Mountains stay grounded at the horizon
       refs.mountains.forEach((mountain, i) => {
-        const speed = 1 + i * 0.7;
-        const targetZ = mountain.userData.baseZ + scrollY * speed * 0.3;
-        mountain.position.z = targetZ;
+        const speed = 1 + i * 0.6;
+        mountain.position.z = mountain.userData.baseZ + scrollY * speed * 0.25;
       });
 
       if (refs.nebula) {
-        refs.nebula.position.z = -950 + scrollY * 0.15;
+        refs.nebula.position.z = -900 + scrollY * 0.1;
       }
     };
 
@@ -543,30 +498,6 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
     
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Section Data aligned with Nabnit Naik's profile
-  const profilePhases = [
-    {
-      badge: 'GITHUB PROFILE // NAIKNABNIT',
-      titleEnglish: 'NABNIT',
-      subtitleLine1: 'Computer Science Engineering • Developer • Problem Solver',
-      subtitleLine2: 'Curious by nature. Builder by choice.',
-    },
-    {
-      badge: 'CORE DOMAIN // INTELLIGENCE',
-      titleEnglish: 'AGENTIC AI',
-      subtitleLine1: 'LLMs, RAG & Autonomous Multi-Agent Workflows',
-      subtitleLine2: 'Engineering reasoning engines, LangGraph architectures & vector retrieval',
-    },
-    {
-      badge: 'CORE DOMAIN // ARCHITECTURE',
-      titleEnglish: 'FULL STACK',
-      subtitleLine1: 'Modern Web Engineering & Production Cloud Scale',
-      subtitleLine2: 'Next.js • React • Containerized Microservices • Real-world impact',
-    },
-  ];
-
-  const currentPhase = profilePhases[currentSection] || profilePhases[0];
 
   return (
     <div ref={containerRef} className="hero-container cosmos-style relative w-full">
@@ -582,77 +513,67 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         <div className="vertical-text">NABNIT</div>
       </div>
 
-      {/* FIXED VIEWPORT HERO OVERLAY - Always perfectly centered and legible! */}
+      {/* Hero Content Overlay - Pure and focused on Nabnit's identity & motto */}
       <div 
-        className={`hero-sticky-frame transition-opacity duration-700 ${
-          scrollProgress > 0.98 ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        className={`hero-sticky-frame transition-opacity duration-500 ${
+          scrollProgress > 0.95 ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center text-center">
-          {/* Phase Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 mb-5 rounded-full border border-cyan-500/40 bg-cyan-950/50 backdrop-blur-md text-xs font-mono text-cyan-300 tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+          {/* Identity Tag */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-cyan-500/40 bg-cyan-950/60 backdrop-blur-md text-xs font-mono text-cyan-300 tracking-wider shadow-[0_0_25px_rgba(6,182,212,0.35)]">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span>{currentPhase.badge}</span>
-            {currentSection === 0 && (
-              <span className="ml-2 pl-2 border-l border-cyan-500/40 text-[10px] text-cyan-400/80">
-                {isJapaneseName ? 'JP // ナブニット' : 'EN // NABNIT'}
-              </span>
-            )}
+            <span>GITHUB PROFILE // NAIKNABNIT</span>
+            <span className="ml-2 pl-2 border-l border-cyan-500/40 text-[10px] text-cyan-400/90 font-semibold">
+              {isJapanese ? 'JP // ナブニット' : 'EN // NABNIT'}
+            </span>
           </div>
 
-          {/* DYNAMIC TITLE DISPLAY */}
-          {currentSection === 0 ? (
-            /* First Page: Timely Transition between NABNIT (EN) and Japanese Calligraphy */
-            <div className="relative min-h-[140px] md:min-h-[180px] flex items-center justify-center w-full my-2">
-              {/* English Name */}
-              <h1
-                className={`hero-title transition-all duration-700 absolute ${
-                  !isJapaneseName
-                    ? 'opacity-100 scale-100 translate-y-0'
-                    : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'
-                }`}
-              >
-                NABNIT
-              </h1>
+          {/* DYNAMIC TITLE: Timely Transition between NABNIT (EN) and Extracted Katakana Letters ナブニット (JP) */}
+          <div className="relative min-h-[140px] md:min-h-[180px] flex items-center justify-center w-full my-1">
+            {/* English Typography */}
+            <h1
+              className={`hero-title transition-all duration-700 absolute font-black tracking-[0.25em] ${
+                !isJapanese
+                  ? 'opacity-100 scale-100 translate-y-0'
+                  : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'
+              }`}
+            >
+              NABNIT
+            </h1>
 
-              {/* Japanese Letters Calligraphy */}
-              <div
-                className={`transition-all duration-700 flex flex-col items-center justify-center absolute ${
-                  isJapaneseName
-                    ? 'opacity-100 scale-100 translate-y-0'
-                    : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
-                }`}
-              >
-                <img
-                  src="/nabnit-japanese.png"
-                  alt="Nabnit in Japanese (ナブニット)"
-                  className="japanese-calligraphy h-28 md:h-44 w-auto object-contain max-w-[85vw]"
-                />
-                <span className="text-xs font-mono tracking-[0.4em] text-cyan-300 uppercase mt-1 text-center">
-                  ナブニット • NABNIT
-                </span>
-              </div>
-            </div>
-          ) : (
-            /* Subsequent Phases: AGENTIC AI / FULL STACK */
-            <div className="relative min-h-[140px] md:min-h-[180px] flex items-center justify-center w-full my-2">
-              <h2 className="hero-title">
-                {currentPhase.titleEnglish}
-              </h2>
-            </div>
-          )}
-
-          {/* Subtitle description */}
-          <div className="hero-subtitle cosmos-subtitle transition-all duration-500 mt-3">
-            <p className="subtitle-line font-medium text-slate-200">
-              {currentPhase.subtitleLine1}
-            </p>
-            <p className="subtitle-line text-slate-400 text-sm md:text-base">
-              {currentPhase.subtitleLine2}
-            </p>
+            {/* Extracted Japanese Typography - Rendered with Styled Japanese Font, always 100% visible! */}
+            <h1
+              lang="ja"
+              style={{ fontFamily: "'Noto Sans JP', 'Plus Jakarta Sans', sans-serif" }}
+              className={`hero-title transition-all duration-700 absolute font-black tracking-[0.3em] ${
+                isJapanese
+                  ? 'opacity-100 scale-100 translate-y-0'
+                  : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
+              }`}
+            >
+              ナブニット
+            </h1>
           </div>
 
-          {/* Interactive CTA buttons */}
+          {/* Core Motto - "Curious by nature. Builder by choice." */}
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <blockquote className="text-xl md:text-3xl font-light tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-indigo-200 italic filter drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+              "Curious by nature. Builder by choice."
+            </blockquote>
+            <p className="text-sm md:text-base text-slate-300 font-normal tracking-wide mt-1">
+              Computer Science Engineering • Developer • Problem Solver
+            </p>
+            <div className="inline-flex items-center gap-2 text-xs font-mono text-cyan-400/80 tracking-widest mt-1">
+              <span>AI</span>
+              <span>//</span>
+              <span>FULL STACK</span>
+              <span>//</span>
+              <span>CLOUD</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             {onScrollToContent && (
               <button 
@@ -663,20 +584,18 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
               </button>
             )}
 
-            {currentSection === 0 && (
-              <button
-                onClick={() => setIsJapaneseName(!isJapaneseName)}
-                className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/60 hover:border-cyan-500/40 text-xs font-mono text-slate-300 hover:text-white transition-all backdrop-blur-sm cursor-pointer"
-                title="Switch English / Japanese Calligraphy"
-              >
-                Switch {isJapaneseName ? 'English' : 'Japanese'} (ナブニット)
-              </button>
-            )}
+            <button
+              onClick={() => setIsJapanese(!isJapanese)}
+              className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/70 hover:border-cyan-500/40 text-xs font-mono text-slate-300 hover:text-white transition-all backdrop-blur-sm cursor-pointer"
+              title="Toggle English / Japanese Letters"
+            >
+              Switch {isJapanese ? 'English (NABNIT)' : 'Japanese (ナブニット)'}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Scroll progress indicator */}
+      {/* Scroll flight indicator */}
       <div ref={scrollProgressRef} className="scroll-progress" style={{ visibility: 'hidden' }}>
         <div className="scroll-text">SCROLL FLIGHT</div>
         <div className="progress-track">
@@ -686,13 +605,12 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
           />
         </div>
         <div className="section-counter">
-          0{currentSection + 1} / 0{totalSections + 1}
+          {Math.round(scrollProgress * 100)}%
         </div>
       </div>
 
       {/* Virtual Scroll Height Track for prolonged space flight */}
       <div className="scroll-sections-track">
-        <div className="content-section-virtual" />
         <div className="content-section-virtual" />
         <div className="content-section-virtual" />
       </div>

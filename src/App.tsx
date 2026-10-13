@@ -73,7 +73,7 @@ export function App() {
     if (aboutSection) {
       aboutSection.scrollIntoView({ behavior: 'smooth' });
     } else {
-      window.scrollTo({ top: window.innerHeight * 4.5, behavior: 'smooth' });
+      window.scrollTo({ top: window.innerHeight * 2.5, behavior: 'smooth' });
     }
   };
 
@@ -87,7 +87,7 @@ export function App() {
         <HorizonHeroSection onScrollToContent={handleScrollToContent} />
       </div>
 
-      {/* Content Container positioned seamlessly beneath prolonged 3D flight */}
+      {/* Content Container positioned seamlessly beneath 3D flight */}
       <main className="relative z-20 bg-slate-950/95 backdrop-blur-2xl border-t border-cyan-500/20 shadow-[0_-30px_100px_rgba(0,0,0,0.95)]">
         {/* Glow Divider */}
         <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
