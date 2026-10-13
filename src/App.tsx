@@ -73,7 +73,7 @@ export function App() {
     if (aboutSection) {
       aboutSection.scrollIntoView({ behavior: 'smooth' });
     } else {
-      window.scrollTo({ top: window.innerHeight * 3, behavior: 'smooth' });
+      window.scrollTo({ top: window.innerHeight * 4.5, behavior: 'smooth' });
     }
   };
 
@@ -84,28 +84,11 @@ export function App() {
 
       {/* 3D Horizon Hero Section */}
       <div id="hero" className="relative">
-        <HorizonHeroSection
-          customTitles={['NABNIT', 'ARCHITECT', 'INFINITY']}
-          customSubtitles={[
-            {
-              line1: 'AI & Full-Stack Engineer',
-              line2: 'Crafting agentic systems and high-impact digital experiences',
-            },
-            {
-              line1: 'Building with LLMs, RAG & Cloud Scale',
-              line2: 'Curious by nature. Builder by choice.',
-            },
-            {
-              line1: 'In the space between thought and creation,',
-              line2: 'we shape the future of tomorrow',
-            },
-          ]}
-          onScrollToContent={handleScrollToContent}
-        />
+        <HorizonHeroSection onScrollToContent={handleScrollToContent} />
       </div>
 
-      {/* Content Container positioned seamlessly beneath / alongside 3D flight */}
-      <main className="relative z-20 bg-slate-950/90 backdrop-blur-2xl border-t border-cyan-500/20 shadow-[0_-30px_100px_rgba(0,0,0,0.9)]">
+      {/* Content Container positioned seamlessly beneath prolonged 3D flight */}
+      <main className="relative z-20 bg-slate-950/95 backdrop-blur-2xl border-t border-cyan-500/20 shadow-[0_-30px_100px_rgba(0,0,0,0.95)]">
         {/* Glow Divider */}
         <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
 
@@ -115,10 +98,10 @@ export function App() {
         {/* Section 02: Featured Projects */}
         <ProjectsSection />
 
-        {/* Section 03: Tech Stack Matrix */}
+        {/* Section 03: Tech Stack Matrix with Bubble Animations */}
         <TechStackSection />
 
-        {/* Section 04: GitHub Live Repos & Metrics */}
+        {/* Section 04: GitHub Live Repos & Analytics */}
         <GitHubStatsSection />
 
         {/* Section 05: Contact & Footer */}

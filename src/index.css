@@ -31,10 +31,9 @@
 
   html,
   body {
-    background-color: #030712;
+    background-color: #000000;
     color: #f8fafc;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-      Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden;
     scroll-behavior: smooth;
   }
@@ -47,11 +46,11 @@
   }
 }
 
-/* Horizon Hero Section Styles */
+/* Horizon Hero Section Styles - Extended scroll length for prolonged flight */
 .hero-container.cosmos-style {
   position: relative;
   width: 100%;
-  min-height: 300vh;
+  min-height: 450vh;
   background-color: #000000;
   color: #ffffff;
   overflow-x: hidden;
@@ -103,55 +102,70 @@
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   letter-spacing: 0.35em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.75rem;
   font-weight: 600;
   color: rgba(103, 232, 249, 0.85);
 }
 
-/* First section hero-content */
-.hero-content.cosmos-content {
-  position: relative;
+/* Fixed Hero Content Overlay */
+.hero-sticky-frame {
+  position: fixed;
+  inset: 0;
   z-index: 10;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  pointer-events: none;
+}
+
+.hero-sticky-frame > * {
+  pointer-events: auto;
 }
 
 .hero-title {
-  font-size: clamp(3rem, 9vw, 8rem);
+  font-size: clamp(2.8rem, 8.5vw, 7.5rem);
   font-weight: 900;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.22em;
   line-height: 1.1;
   text-transform: uppercase;
-  background: linear-gradient(180deg, #ffffff 15%, #cbd5e1 60%, #475569 100%);
+  color: #ffffff;
+  background: linear-gradient(180deg, #ffffff 15%, #e2e8f0 55%, #94a3b8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 35px rgba(56, 189, 248, 0.35));
+  filter: drop-shadow(0 0 35px rgba(56, 189, 248, 0.5));
   user-select: none;
 }
 
 .title-char {
   display: inline-block;
+  background: linear-gradient(180deg, #ffffff 15%, #e2e8f0 55%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   transform-origin: bottom center;
+}
+
+/* Japanese Calligraphy Image Filter */
+.japanese-calligraphy {
+  filter: invert(1) brightness(1.25) drop-shadow(0 0 25px rgba(6, 182, 212, 0.9)) drop-shadow(0 0 50px rgba(99, 102, 241, 0.6));
+  mix-blend-mode: screen;
+  user-select: none;
+  pointer-events: none;
 }
 
 .hero-subtitle.cosmos-subtitle {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 1.5rem;
-  font-size: clamp(1rem, 2.2vw, 1.4rem);
-  color: #94a3b8;
+  margin-top: 1.25rem;
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  color: #cbd5e1;
   font-weight: 300;
   letter-spacing: 0.05em;
-  max-width: 700px;
+  max-width: 720px;
 }
 
 .subtitle-line {
@@ -167,9 +181,9 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.75rem;
-  color: rgba(203, 213, 225, 0.8);
+  color: rgba(203, 213, 225, 0.85);
   pointer-events: none;
 }
 
@@ -182,7 +196,7 @@
 .progress-track {
   width: 90px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -199,22 +213,94 @@
   font-weight: 600;
 }
 
-/* Scroll sections */
-.scroll-sections {
+/* Virtual Scroll Distance Sections */
+.scroll-sections-track {
   position: relative;
-  z-index: 10;
+  z-index: 5;
   width: 100%;
 }
 
-.content-section {
-  min-height: 100vh;
+.content-section-virtual {
+  min-height: 150vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 2rem;
-  position: relative;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Animations for Floating Skills Bubbles */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(1.5deg);
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-22px) rotate(-2deg);
+  }
+}
+
+@keyframes float-fast {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(1deg);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(6, 182, 212, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(6, 182, 212, 0);
+  }
+}
+
+@keyframes beam-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 4.8s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: float-fast 3.6s ease-in-out infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.beam-border {
+  background-size: 200% 200%;
+  animation: beam-gradient 4s ease infinite;
 }
 
 /* Custom scrollbar */
