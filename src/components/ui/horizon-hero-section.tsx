@@ -6,15 +6,19 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { ChevronDown, Sparkles } from 'lucide-react';
+import { ChevronDown, Sparkles, HeartHandshake } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export interface HorizonHeroProps {
   onScrollToContent?: () => void;
+  onOpenWelcomeNote?: () => void;
 }
 
-export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => {
+export const Component: React.FC<HorizonHeroProps> = ({ 
+  onScrollToContent,
+  onOpenWelcomeNote 
+}) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const scrollProgressRef = useRef<HTMLDivElement | null>(null);
@@ -161,7 +165,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
             void main() {
               vColor = color;
               vec3 pos = position;
-              float angle = time * 0.035 * (1.0 - depth * 0.25);
+              float angle = time * 0.012 * (1.0 - depth * 0.25);
               mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
               pos.xy = rot * pos.xy;
               
@@ -225,7 +229,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
           varying float vElevation;
           
           void main() {
-            float mixFactor = sin(vUv.x * 8.0 + time * 0.5) * cos(vUv.y * 8.0 + time * 0.5);
+            float mixFactor = sin(vUv.x * 8.0 + time * 0.18) * cos(vUv.y * 8.0 + time * 0.18);
             vec3 color = mix(color1, color2, mixFactor * 0.5 + 0.5);
             float alpha = opacity * (1.0 - length(vUv - 0.5) * 1.9);
             alpha *= 1.0 + vElevation * 0.01;
@@ -343,7 +347,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
       if (refs.nebula) {
         const mat = refs.nebula.material as THREE.ShaderMaterial;
         if (mat.uniforms && mat.uniforms.time) {
-          mat.uniforms.time.value = time * 0.5;
+          mat.uniforms.time.value = time * 0.18;
         }
       }
 
@@ -353,8 +357,8 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         smoothCameraPos.current.y += ((refs.targetCameraY ?? 16) - smoothCameraPos.current.y) * smoothingFactor;
         smoothCameraPos.current.z += ((refs.targetCameraZ ?? 320) - smoothCameraPos.current.z) * smoothingFactor;
         
-        const floatX = Math.sin(time * 0.08) * 1.2;
-        const floatY = Math.cos(time * 0.12) * 0.6;
+        const floatX = Math.sin(time * 0.028) * 1.2;
+        const floatY = Math.cos(time * 0.04) * 0.6;
         
         refs.camera.position.x = smoothCameraPos.current.x + floatX;
         refs.camera.position.y = smoothCameraPos.current.y + floatY;
@@ -364,9 +368,9 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
 
       refs.mountains.forEach((mountain, i) => {
         const parallaxFactor = 1 + i * 0.4;
-        mountain.position.x = Math.sin(time * 0.09) * 1.5 * parallaxFactor;
+        mountain.position.x = Math.sin(time * 0.03) * 1.5 * parallaxFactor;
         const baseY = mountain.userData.baseY ?? -75;
-        mountain.position.y = baseY + (Math.cos(time * 0.12) * 0.8 * parallaxFactor);
+        mountain.position.y = baseY + (Math.cos(time * 0.04) * 0.8 * parallaxFactor);
       });
 
       if (refs.composer) {
@@ -466,9 +470,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
 
       const { current: refs } = threeRefs;
       
-      // Camera smoothly glides forward:
-      // Page 1 (0 -> 0.45): z=320 -> z=260
-      // Page 2 (0.45 -> 1.0): z=260 -> z=180
+      // Camera smooth glide in safe range
       refs.targetCameraX = 0;
       refs.targetCameraY = 16 + rawProgress * 12;
       refs.targetCameraZ = 320 - rawProgress * 135; // safe range 320 -> 185
@@ -514,26 +516,26 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
 
       {/* FIXED VIEWPORT FRAME CONTAINING PAGE 1 & PAGE 2 */}
       <div 
-        className={`hero-sticky-frame transition-opacity duration-500 ${
+        className={`hero-sticky-frame transition-opacity duration-[1500ms] ${
           scrollProgress > 0.95 ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
         {/* ========================================================
-            PAGE 1: ULTRA-VISIBLE NAME (NABNIT ⇄ ナブニット single-line)
+            PAGE 1: ANIMATED WELCOME NOTE & NAME (NABNIT ⇄ ナブニット)
             Active when scrollProgress < 0.45
             ======================================================== */}
         <div
-          className={`transition-all duration-700 flex flex-col items-center justify-center text-center w-full max-w-5xl px-4 absolute ${
+          className={`transition-all duration-[1500ms] flex flex-col items-center justify-center text-center w-full max-w-5xl px-4 absolute ${
             !isPage2Active
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-95 -translate-y-12 pointer-events-none'
           }`}
         >
-          {/* Identity Tag */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full border border-cyan-400/50 bg-cyan-950/70 backdrop-blur-md text-xs font-mono text-cyan-300 tracking-wider shadow-[0_0_25px_rgba(6,182,212,0.4)]">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span>GITHUB PROFILE // NAIKNABNIT</span>
-            <span className="ml-2 pl-2 border-l border-cyan-500/40 text-[10px] text-cyan-400/90 font-semibold">
+          {/* ANIMATED WELCOME NOTE BADGE WITH NABNIT'S NAME */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 rounded-full border border-cyan-400/60 bg-cyan-950/80 backdrop-blur-md text-xs font-mono text-cyan-300 tracking-wider shadow-[0_0_30px_rgba(6,182,212,0.45)]">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+            <span className="font-bold">WELCOME TO THE DIGITAL UNIVERSE OF NABNIT NAIK</span>
+            <span className="ml-2 pl-2 border-l border-cyan-500/40 text-[10px] text-cyan-400/90 font-semibold hidden sm:inline">
               {isJapanese ? 'JP // ナブニット' : 'EN // NABNIT'}
             </span>
           </div>
@@ -542,7 +544,7 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
           <div className="relative min-h-[140px] md:min-h-[180px] flex items-center justify-center w-full my-2 overflow-visible">
             {/* English Typography - High Luminance */}
             <h1
-              className={`hero-title transition-all duration-700 absolute font-black tracking-[0.22em] text-center w-full whitespace-nowrap select-none ${
+              className={`hero-title transition-all duration-[1500ms] absolute font-black tracking-[0.22em] text-center w-full whitespace-nowrap select-none ${
                 !isJapanese
                   ? 'opacity-100 scale-100 translate-y-0'
                   : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'
@@ -551,11 +553,11 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
               NABNIT
             </h1>
 
-            {/* Extracted Japanese Typography - Strictly single line with whitespace-nowrap */}
+            {/* Extracted Japanese Typography - Strictly single line */}
             <h1
               lang="ja"
               style={{ fontFamily: "'Noto Sans JP', 'Plus Jakarta Sans', sans-serif" }}
-              className={`hero-title transition-all duration-700 absolute font-black tracking-[0.1em] md:tracking-[0.16em] text-center w-full whitespace-nowrap select-none ${
+              className={`hero-title transition-all duration-[1500ms] absolute font-black tracking-[0.1em] md:tracking-[0.16em] text-center w-full whitespace-nowrap select-none ${
                 isJapanese
                   ? 'opacity-100 scale-100 translate-y-0'
                   : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
@@ -565,10 +567,13 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
             </h1>
           </div>
 
-          {/* Subtitle Details */}
-          <div className="mt-4 flex flex-col items-center gap-1.5">
-            <p className="text-base md:text-xl text-slate-200 font-medium tracking-wide">
-              Computer Science Engineering • Developer • Problem Solver
+          {/* PERSONALIZED WELCOME NOTE SUBTITLE */}
+          <div className="mt-4 flex flex-col items-center gap-2 max-w-2xl">
+            <p className="text-base md:text-xl text-slate-100 font-medium tracking-wide">
+              Hello and welcome! I'm <span className="text-cyan-300 font-bold">Nabnit Naik</span> — Computer Science Engineer & Developer.
+            </p>
+            <p className="text-xs md:text-sm text-slate-400 font-light leading-relaxed">
+              Step inside to explore my universe of intelligent software, agentic workflows, and full-stack digital creations.
             </p>
             <div className="inline-flex items-center gap-2.5 text-xs font-mono text-cyan-400/90 tracking-widest mt-1">
               <span>AI</span>
@@ -579,11 +584,21 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
             </div>
           </div>
 
-          {/* Manual switch button */}
-          <div className="mt-7 flex items-center gap-3">
+          {/* Action Buttons */}
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            {onOpenWelcomeNote && (
+              <button
+                onClick={onOpenWelcomeNote}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-cyan-400/60 bg-cyan-950/70 hover:bg-cyan-900/80 text-xs font-mono text-cyan-300 transition-all backdrop-blur-md cursor-pointer hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Read Full Welcome Note</span>
+              </button>
+            )}
+
             <button
               onClick={() => setIsJapanese(!isJapanese)}
-              className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/80 hover:border-cyan-500/50 text-xs font-mono text-slate-300 hover:text-white transition-all backdrop-blur-md cursor-pointer hover:shadow-[0_0_20px_rgba(6,182,212,0.25)]"
+              className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/80 hover:border-cyan-500/50 text-xs font-mono text-slate-300 hover:text-white transition-all backdrop-blur-md cursor-pointer"
               title="Toggle English / Japanese"
             >
               Switch {isJapanese ? 'English (NABNIT)' : 'Japanese (ナブニット)'}
@@ -599,11 +614,11 @@ export const Component: React.FC<HorizonHeroProps> = ({ onScrollToContent }) => 
         </div>
 
         {/* ========================================================
-            PAGE 2: THE QUOTE DISPLAY
+            PAGE 2: THE QUOTE DISPLAY ("Curious by nature. Builder by choice.")
             Active when scrollProgress >= 0.45
             ======================================================== */}
         <div
-          className={`transition-all duration-700 flex flex-col items-center justify-center text-center w-full max-w-4xl px-4 absolute ${
+          className={`transition-all duration-[1500ms] flex flex-col items-center justify-center text-center w-full max-w-4xl px-4 absolute ${
             isPage2Active
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-95 translate-y-12 pointer-events-none'

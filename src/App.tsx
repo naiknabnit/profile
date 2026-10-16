@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Component as HorizonHeroSection } from '@/components/ui/horizon-hero-section';
 import { Navbar } from '@/components/Navbar';
+import { WelcomeOverlay } from '@/components/WelcomeOverlay';
 import { AboutSection } from '@/components/AboutSection';
 import { ProjectsSection } from '@/components/ProjectsSection';
 import { TechStackSection } from '@/components/TechStackSection';
@@ -20,6 +21,14 @@ interface GitHubUserData {
 }
 
 export function App() {
+  const [welcomeOpen, setWelcomeOpen] = useState<boolean>(() => {
+    try {
+      return !sessionStorage.getItem('nabnit_welcome_seen');
+    } catch {
+      return true;
+    }
+  });
+
   const [githubUser, setGithubUser] = useState<GitHubUserData>({
     login: 'naiknabnit',
     name: 'Nabnit Naik',
@@ -73,18 +82,40 @@ export function App() {
     if (aboutSection) {
       aboutSection.scrollIntoView({ behavior: 'smooth' });
     } else {
-      window.scrollTo({ top: window.innerHeight * 2.5, behavior: 'smooth' });
+      window.scrollTo({ top: window.innerHeight * 2.8, behavior: 'smooth' });
     }
+  };
+
+  const handleEnterUniverse = () => {
+    try {
+      sessionStorage.setItem('nabnit_welcome_seen', 'true');
+    } catch {
+      // ignore
+    }
+    setWelcomeOpen(false);
   };
 
   return (
     <div className="min-h-screen bg-black text-slate-100 selection:bg-cyan-500 selection:text-black">
+      {/* Cinematic Welcome Transmission Overlay */}
+      <WelcomeOverlay
+        isOpen={welcomeOpen}
+        onEnter={handleEnterUniverse}
+        onClose={() => setWelcomeOpen(false)}
+      />
+
       {/* Top Floating Navbar */}
-      <Navbar onNavigate={handleNavigate} />
+      <Navbar 
+        onNavigate={handleNavigate} 
+        onOpenWelcome={() => setWelcomeOpen(true)}
+      />
 
       {/* 3D Horizon Hero Section */}
       <div id="hero" className="relative">
-        <HorizonHeroSection onScrollToContent={handleScrollToContent} />
+        <HorizonHeroSection 
+          onScrollToContent={handleScrollToContent} 
+          onOpenWelcomeNote={() => setWelcomeOpen(true)}
+        />
       </div>
 
       {/* Content Container positioned seamlessly beneath 3D flight */}

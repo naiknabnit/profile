@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, Terminal, Sparkles, Menu, X } from 'lucide-react';
+import { ExternalLink, Terminal, Sparkles, Menu, X, MessageSquareQuote } from 'lucide-react';
 import { GithubIcon, LinkedinIcon } from './icons';
 
 interface NavbarProps {
   onNavigate: (sectionId: string) => void;
+  onOpenWelcome?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenWelcome }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -70,8 +71,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
           ))}
         </nav>
 
-        {/* Social / External CTAs */}
-        <div className="hidden sm:flex items-center gap-3">
+        {/* Social / External CTAs + Welcome Note Trigger */}
+        <div className="hidden sm:flex items-center gap-2.5">
+          {onOpenWelcome && (
+            <button
+              onClick={onOpenWelcome}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/40 rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.25)] cursor-pointer hover:scale-105"
+              title="Open Welcome Transmission"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Welcome Note</span>
+            </button>
+          )}
+
           <a
             href="https://github.com/naiknabnit"
             target="_blank"
@@ -81,6 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
             <GithubIcon className="w-3.5 h-3.5 text-cyan-400" />
             <span>GitHub</span>
           </a>
+
           <a
             href="https://www.linkedin.com/in/nabnitnaik/"
             target="_blank"
@@ -89,16 +102,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
           >
             <LinkedinIcon className="w-3.5 h-3.5 text-indigo-400" />
             <span>LinkedIn</span>
-          </a>
-          <a
-            href="https://www.unionchurch.in/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono text-cyan-300 bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-500/30 rounded-lg transition-all shadow-sm"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Live Project</span>
-            <ExternalLink className="w-3 h-3 text-cyan-400/70" />
           </a>
         </div>
 
@@ -115,6 +118,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-slate-950/95 border-b border-cyan-500/20 px-6 py-4 flex flex-col gap-3 backdrop-blur-xl">
+          {onOpenWelcome && (
+            <button
+              onClick={() => {
+                onOpenWelcome();
+                setMobileMenuOpen(false);
+              }}
+              className="text-left py-2 text-sm font-mono text-cyan-300 flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span>Open Welcome Note</span>
+            </button>
+          )}
+
           {navLinks.map((link) => (
             <button
               key={link.id}
