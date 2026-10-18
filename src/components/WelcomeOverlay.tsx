@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Terminal, ArrowRight, X, Volume2, ShieldCheck, Heart } from 'lucide-react';
-
-interface WelcomeOverlayProps {
-  onEnter: () => void;
-  isOpen?: boolean;
-  onClose?: () => void;
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, GithubIcon, LinkedinIcon, Sparkles } from 'lucide-react';
+onEnter: () => void;
+onEnter: () => void; onclose ?: () => void;
 }
 
 export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({
@@ -13,151 +10,254 @@ export const WelcomeOverlay: React.FC<WelcomeOverlayProps> = ({
   onClose,
 }) => {
   const [visible, setVisible] = useState(isOpen);
-  const [typingIndex, setTypingIndex] = useState(0);
+  const [phase, setPhase] = useState<'loading' | 'landing'>('loading');
+  const [progress, setProgress] = useState(0);
+  const [exiting, setExiting] = useState(false);
+  const rafRef = useRef<number | null>(null);
 
-  const fullWelcomeText =
-    "Welcome to my creative universe! I am Nabnit Naik — a Computer Science Engineer passionate about building agentic AI systems, scalable full-stack applications, and impactful software products. Step inside and explore my code, experiments, and digital craftsmanship.";
-
+  /* ── Sync with parent isOpen ── */
   useEffect(() => {
     setVisible(isOpen);
+    if (isOpen) {
+      setPhase('loading');
+      setProgress(0);
+      setExiting(false);
+    }
   }, [isOpen]);
 
-  // Typewriter effect for welcome text
+  /* ── Preloader counter 0 → 100 over ~2.4 s ── */
   useEffect(() => {
-    if (!visible) return;
-    setTypingIndex(0);
-    const interval = setInterval(() => {
-      setTypingIndex((prev) => {
-        if (prev < fullWelcomeText.length) {
-          return prev + 1;
-        }
-        clearInterval(interval);
-        return prev;
-      });
-    }, 18);
-    return () => clearInterval(interval);
-  }, [visible]);
+    if (!visible || phase !== 'loading') return;
 
-  // Press Enter to enter experience
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && visible) {
-        handleEnter();
-      } else if (e.key === 'Escape' && visible) {
-        handleClose();
+    const start = performance.now();
+    const duration = 2400;
+
+    const tick = (now: number) => {
+      const pct = Math.min(((now - start) / duration) * 100, 100);
+      setProgress(Math.floor(pct));
+      if (pct < 100) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        // Brief pause then flip to landing
+        setTimeout(() => setPhase('landing'), 350);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [visible, phase]);
+
+  /* ── Keyboard shortcuts ── */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!visible) return;
+      if (e.key === 'Enter') doEnter();
+      if (e.key === 'Escape') doClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [visible]);
 
-  const handleEnter = () => {
-    setVisible(false);
-    onEnter();
+  const doEnter = () => {
+    setExiting(true);
+    setTimeout(() => {
+      setVisible(false);
+      onEnter();
+    }, 650);
   };
 
-  const handleClose = () => {
-    setVisible(false);
-    if (onClose) onClose();
+  const doClose = () => {
+    setExiting(true);
+    setTimeout(() => {
+      setVisible(false);
+      if (onClose) onClose();
+      else onEnter();
+    }, 650);
   };
 
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-2xl p-4 transition-all duration-700 animate-in fade-in select-none">
-      {/* Background ambient cosmic glow */}
-      <div className="absolute w-[500px] h-[500px] rounded-full bg-cyan-500/15 blur-[120px] pointer-events-none animate-pulse" />
-      <div className="absolute w-[400px] h-[400px] rounded-full bg-indigo-500/15 blur-[100px] pointer-events-none" />
+    <div
+      className={`welcome-root ${exiting ? 'welcome-root--exit' : ''}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Portfolio landing screen"
+    >
+      {/* ── Ambient cosmic blobs ── */}
+      <div className="welcome-blob welcome-blob--cyan" aria-hidden="true" />
+      <div className="welcome-blob welcome-blob--indigo" aria-hidden="true" />
+      <div className="welcome-blob welcome-blob--purple" aria-hidden="true" />
 
-      {/* Futuristic Holographic Card */}
-      <div className="relative w-full max-w-2xl rounded-3xl bg-slate-950/90 border border-cyan-500/40 p-6 md:p-10 backdrop-blur-3xl shadow-[0_0_60px_rgba(6,182,212,0.25)] overflow-hidden">
-        {/* Animated Cyber Border Beam */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-indigo-500 to-cyan-500 animate-pulse" />
-
-        {/* Top Header Row */}
-        <div className="flex items-center justify-between pb-6 border-b border-slate-800/80">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-xs font-mono tracking-widest text-cyan-300 uppercase">
-              TRANSMISSION // INCOMING GREETING
-            </span>
+      {/* ================================================================
+          PHASE 1: PRELOADER
+          ================================================================ */}
+      <div className={`welcome-phase welcome-preloader ${phase === 'loading' ? 'welcome-phase--active' : 'welcome-phase--gone'}`}>
+        {/* HUD rings */}
+        <div className="hud-rings" aria-hidden="true">
+          <div className="hud-ring hud-ring--1" />
+          <div className="hud-ring hud-ring--2" />
+          <div className="hud-ring hud-ring--3" />
+          <div className="hud-ring hud-ring--4" />
+          {/* Dashed inner ring */}
+          <div className="hud-ring hud-ring--dash" />
+          {/* Counter */}
+          <div className="hud-center">
+            <span className="hud-pct">{progress}</span>
+            <span className="hud-pct-sign">%</span>
           </div>
-
-          <button
-            onClick={handleClose}
-            className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-colors cursor-pointer"
-            title="Dismiss Welcome Note"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
-        {/* Central Content with Avatar & Welcome Note */}
-        <div className="py-8 flex flex-col items-center text-center">
-          {/* Avatar with Pulsing Radar Ring */}
-          <div className="relative mb-6">
-            <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-cyan-400/70 p-0.5 shadow-[0_0_30px_rgba(6,182,212,0.5)]">
+        {/* Labels */}
+        <p className="preloader-label-top">PORTFOLIO LOADING</p>
+        <p className="preloader-label-bottom">PREPARING INTERFACE</p>
+
+        {/* Progress bar */}
+        <div className="preloader-bar-track" aria-hidden="true">
+          <div className="preloader-bar-fill" style={{ width: `${progress}%` }} />
+        </div>
+
+        <p className="preloader-name">NABNIT NAIK</p>
+      </div>
+
+      {/* ================================================================
+          PHASE 2: LANDING HERO
+          ================================================================ */}
+      <div className={`welcome-phase welcome-landing ${phase === 'landing' ? 'welcome-phase--active' : 'welcome-phase--hidden'}`}>
+
+        {/* LEFT column */}
+        <div className="landing-left">
+
+          {/* Badge */}
+          <div className="landing-badge">
+            <Sparkles className="w-3 h-3 text-cyan-400" />
+            <span>WELCOME TO MY PORTFOLIO</span>
+          </div>
+
+          {/* Greeting */}
+          <h1 className="landing-heading">
+            Hi, I'm{' '}
+            <span className="landing-name-accent">Nabnit</span>
+          </h1>
+
+          {/* Sub-heading */}
+          <p className="landing-role">
+            Computer Science Engineer
+          </p>
+          <p className="landing-subtitle">
+            I build agentic AI systems, scalable full-stack apps, and impactful software products.
+          </p>
+
+          {/* Tagline */}
+          <p className="landing-tagline">
+            "Curious by nature. Builder by choice."
+          </p>
+
+          {/* CTAs */}
+          <div className="landing-ctas">
+            <button
+              id="welcome-enter-btn"
+              onClick={doEnter}
+              className="landing-cta-primary"
+            >
+              ENTER PORTFOLIO
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={doClose}
+              className="landing-cta-secondary"
+            >
+              SKIP INTRO
+            </button>
+          </div>
+
+          {/* Social row */}
+          <div className="landing-socials">
+            <a
+              href="https://github.com/naiknabnit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="landing-social-link"
+              aria-label="GitHub"
+            >
+              <Github className="w-4.5 h-4.5" />
+            </a>
+            <a
+              href="https://www.linkedin.com/in/nabnitnaik/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="landing-social-link"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="w-4.5 h-4.5" />
+            </a>
+            {/* X / Twitter */}
+            <a
+              href="https://x.com/naiknabnit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="landing-social-link"
+              aria-label="X (Twitter)"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </a>
+          </div>
+
+          {/* Keyboard hint */}
+          <p className="landing-keyboard-hint">
+            Press <kbd>Enter</kbd> to continue · <kbd>Esc</kbd> to skip
+          </p>
+        </div>
+
+        {/* RIGHT column — avatar card */}
+        <div className="landing-right">
+          <div className="landing-avatar-card">
+            {/* Glow halo behind card */}
+            <div className="landing-avatar-glow" aria-hidden="true" />
+
+            {/* Photo */}
+            <div className="landing-avatar-photo-wrap">
               <img
                 src="https://avatars.githubusercontent.com/u/175724208?v=4"
                 alt="Nabnit Naik"
-                className="w-full h-full object-cover rounded-xl"
+                className="landing-avatar-photo"
+                loading="eager"
               />
             </div>
-            <div className="absolute -inset-2 rounded-2xl border border-cyan-400/30 animate-pulse pointer-events-none" />
-            <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-400 text-[10px] font-mono text-cyan-300 font-bold">
+
+            {/* Floating chips */}
+            <div className="landing-chip landing-chip--tl">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              AVAILABLE
+            </div>
+            <div className="landing-chip landing-chip--br">
               ITER CSE
-            </span>
+            </div>
+
+            {/* Scan-line overlay */}
+            <div className="landing-avatar-scanline" aria-hidden="true" />
           </div>
 
-          {/* Welcome Heading */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-xs font-mono text-cyan-300 mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>PERSONAL WELCOME NOTE</span>
-          </div>
-
-          <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight">
-            Hello, Welcome to My Space!
-          </h2>
-
-          <div className="text-sm font-mono text-cyan-400 mt-1 mb-4">
-            I AM <span className="text-white font-bold tracking-wider">NABNIT NAIK</span> (ナブニット)
-          </div>
-
-          {/* Typewriter Welcome Paragraph */}
-          <div className="w-full min-h-[90px] p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-left font-mono text-xs md:text-sm text-slate-200 leading-relaxed relative">
-            <Terminal className="w-4 h-4 text-cyan-400 inline-block mr-2" />
-            <span>{fullWelcomeText.slice(0, typingIndex)}</span>
-            <span className="inline-block w-1.5 h-4 ml-1 bg-cyan-400 animate-pulse align-middle" />
-          </div>
-
-          {/* Quote Badge */}
-          <div className="mt-5 italic text-sm text-slate-400 font-light">
-            "Curious by nature. Builder by choice."
-          </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Verified Portfolio of Nabnit Naik</span>
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={handleClose}
-              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-mono text-slate-400 hover:text-white transition-all cursor-pointer"
-            >
-              Skip Intro [Esc]
-            </button>
-
-            <button
-              onClick={handleEnter}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-bold text-xs font-mono tracking-wider transition-all shadow-[0_0_25px_rgba(6,182,212,0.5)] cursor-pointer hover:scale-105"
-            >
-              <span>ENTER EXPERIENCE</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+          {/* Stats row below avatar */}
+          <div className="landing-stats">
+            <div className="landing-stat">
+              <span className="landing-stat-value">AI</span>
+              <span className="landing-stat-label">Systems</span>
+            </div>
+            <div className="landing-stat-sep" />
+            <div className="landing-stat">
+              <span className="landing-stat-value">Full</span>
+              <span className="landing-stat-label">Stack</span>
+            </div>
+            <div className="landing-stat-sep" />
+            <div className="landing-stat">
+              <span className="landing-stat-value">Cloud</span>
+              <span className="landing-stat-label">Native</span>
+            </div>
           </div>
         </div>
       </div>

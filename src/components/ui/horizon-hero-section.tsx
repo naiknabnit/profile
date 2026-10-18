@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { ChevronDown, Sparkles, HeartHandshake } from 'lucide-react';
+import { ChevronDown, Sparkles, HeartHandshake, X } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -29,6 +29,7 @@ export const Component: React.FC<HorizonHeroProps> = ({
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [isJapanese, setIsJapanese] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   
   // Timely transition of NABNIT to extracted Japanese letters ナブニット
   useEffect(() => {
@@ -504,15 +505,121 @@ export const Component: React.FC<HorizonHeroProps> = ({
     <div ref={containerRef} className="hero-container cosmos-style relative w-full">
       <canvas ref={canvasRef} className="hero-canvas" />
       
-      {/* Side menu badge */}
+      {/* ================================================================
+          VERTICAL NAV STEM — hamburger trigger + slide-out panel
+          ================================================================ */}
+
+      {/* Hamburger trigger + vertical label */}
       <div ref={menuRef} className="side-menu" style={{ visibility: 'hidden' }}>
-        <div className="menu-icon">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
+        <button
+          id="side-nav-toggle"
+          onClick={() => setMenuOpen(true)}
+          className="menu-icon-btn"
+          aria-label="Open navigation"
+          aria-expanded={menuOpen}
+        >
+          <div className="menu-icon">
+            <span />
+            <span />
+            <span />
+          </div>
+        </button>
         <div className="vertical-text">NABNIT</div>
       </div>
+
+      {/* Slide-out nav panel — backdrop */}
+      {menuOpen && (
+        <div
+          className="side-nav-backdrop"
+          onClick={() => setMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Slide-out nav panel — drawer */}
+      <nav
+        id="side-nav-panel"
+        className={`side-nav-panel ${menuOpen ? 'side-nav-panel--open' : ''}`}
+        aria-label="Site navigation"
+      >
+        {/* Header */}
+        <div className="side-nav-header">
+          <span className="font-mono text-xs text-cyan-400/70 tracking-[0.25em] uppercase">Navigation</span>
+          <button
+            onClick={() => setMenuOpen(false)}
+            className="side-nav-close"
+            aria-label="Close navigation"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Section links */}
+        <div className="side-nav-links">
+          {([
+            { label: 'Horizon',  id: 'hero'     },
+            { label: 'About',    id: 'about'    },
+            { label: 'Projects', id: 'projects' },
+            { label: 'Stack',    id: 'stack'    },
+            { label: 'Repos',    id: 'repos'    },
+            { label: 'Contact',  id: 'contact'  },
+          ] as const).map((link, idx) => (
+            <button
+              key={link.id}
+              className="side-nav-link"
+              style={{ animationDelay: `${idx * 55}ms` }}
+              onClick={() => {
+                setMenuOpen(false);
+                if (link.id === 'hero') {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                  const el = document.getElementById(link.id);
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+            >
+              <span className="side-nav-link-num">0{idx + 1}</span>
+              {link.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div className="side-nav-divider" />
+
+        {/* Social links */}
+        <div className="side-nav-socials">
+          <a
+            href="https://github.com/naiknabnit"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="side-nav-social-link"
+            onClick={() => setMenuOpen(false)}
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+            </svg>
+            GitHub
+          </a>
+          <a
+            href="https://www.linkedin.com/in/nabnitnaik/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="side-nav-social-link"
+            onClick={() => setMenuOpen(false)}
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+            </svg>
+            LinkedIn
+          </a>
+        </div>
+
+        {/* Footer stamp */}
+        <div className="side-nav-footer">
+          <span className="font-mono text-[10px] text-slate-600 tracking-widest">NABNIT NAIK // PORTFOLIO</span>
+        </div>
+      </nav>
 
       {/* FIXED VIEWPORT FRAME CONTAINING PAGE 1 & PAGE 2 */}
       <div 
@@ -531,85 +638,114 @@ export const Component: React.FC<HorizonHeroProps> = ({
               : 'opacity-0 scale-95 -translate-y-12 pointer-events-none'
           }`}
         >
-          {/* ANIMATED WELCOME NOTE BADGE WITH NABNIT'S NAME */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 rounded-full border border-cyan-400/60 bg-cyan-950/80 backdrop-blur-md text-xs font-mono text-cyan-300 tracking-wider shadow-[0_0_30px_rgba(6,182,212,0.45)]">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
-            <span className="font-bold">WELCOME TO THE DIGITAL UNIVERSE OF NABNIT NAIK</span>
-            <span className="ml-2 pl-2 border-l border-cyan-500/40 text-[10px] text-cyan-400/90 font-semibold hidden sm:inline">
+          {/* TOP BADGE */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full border border-cyan-400/50 bg-cyan-950/70 backdrop-blur-md text-[11px] font-mono text-cyan-300/90 tracking-[0.2em] shadow-[0_0_28px_rgba(6,182,212,0.35)]">
+            <Sparkles className="w-3 h-3 text-cyan-400 animate-spin" style={{ animationDuration: '4s' }} />
+            <span>THE DIGITAL UNIVERSE OF NABNIT NAIK</span>
+            <span className="ml-2 pl-2 border-l border-cyan-500/30 text-[10px] text-cyan-400/70 font-semibold hidden sm:inline">
               {isJapanese ? 'JP // ナブニット' : 'EN // NABNIT'}
             </span>
           </div>
 
-          {/* DYNAMIC TITLE: Ultra-visible, single-line guaranteed */}
-          <div className="relative min-h-[140px] md:min-h-[180px] flex items-center justify-center w-full my-2 overflow-visible">
-            {/* English Typography - High Luminance */}
-            <h1
-              className={`hero-title transition-all duration-[1500ms] absolute font-black tracking-[0.22em] text-center w-full whitespace-nowrap select-none ${
-                !isJapanese
-                  ? 'opacity-100 scale-100 translate-y-0'
-                  : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'
-              }`}
-            >
-              NABNIT
-            </h1>
+          {/* ─── TWO-LINE NAME TREATMENT ─── */}
+          <div className="hero-name-block select-none" aria-label="Nabnit Naik">
 
-            {/* Extracted Japanese Typography - Strictly single line */}
-            <h1
-              lang="ja"
-              style={{ fontFamily: "'Noto Sans JP', 'Plus Jakarta Sans', sans-serif" }}
-              className={`hero-title transition-all duration-[1500ms] absolute font-black tracking-[0.1em] md:tracking-[0.16em] text-center w-full whitespace-nowrap select-none ${
-                isJapanese
-                  ? 'opacity-100 scale-100 translate-y-0'
-                  : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
-              }`}
-            >
-              ナブニット
-            </h1>
-          </div>
+            {/* Line 1 — NABNIT ⇄ ナブニット crossfade */}
+            <div className="hero-name-line1-wrap">
+              <h1
+                className={`hero-title hero-name-line1 transition-all duration-[1500ms] absolute ${
+                  !isJapanese
+                    ? 'opacity-100 scale-100 translate-y-0'
+                    : 'opacity-0 scale-95 -translate-y-3 pointer-events-none'
+                }`}
+              >
+                NABNIT
+              </h1>
+              <h1
+                lang="ja"
+                style={{ fontFamily: "'Noto Sans JP', 'Plus Jakarta Sans', sans-serif" }}
+                className={`hero-title hero-name-line1 hero-title-jp transition-all duration-[1500ms] absolute ${
+                  isJapanese
+                    ? 'opacity-100 scale-100 translate-y-0'
+                    : 'opacity-0 scale-95 translate-y-3 pointer-events-none'
+                }`}
+              >
+                ナブニット
+              </h1>
+            </div>
 
-          {/* PERSONALIZED WELCOME NOTE SUBTITLE */}
-          <div className="mt-4 flex flex-col items-center gap-2 max-w-2xl">
-            <p className="text-base md:text-xl text-slate-100 font-medium tracking-wide">
-              Hello and welcome! I'm <span className="text-cyan-300 font-bold">Nabnit Naik</span> — Computer Science Engineer & Developer.
-            </p>
-            <p className="text-xs md:text-sm text-slate-400 font-light leading-relaxed">
-              Step inside to explore my universe of intelligent software, agentic workflows, and full-stack digital creations.
-            </p>
-            <div className="inline-flex items-center gap-2.5 text-xs font-mono text-cyan-400/90 tracking-widest mt-1">
-              <span>AI</span>
-              <span className="text-slate-600">//</span>
-              <span>FULL STACK</span>
-              <span className="text-slate-600">//</span>
-              <span>CLOUD</span>
+            {/* Line 2 — NAIK with glowing cyan flanking accent lines */}
+            <div className="hero-name-line2-wrap">
+              <span className="hero-name-accent-line" aria-hidden="true" />
+              <h2 className="hero-title-naik">NAIK</h2>
+              <span className="hero-name-accent-line" aria-hidden="true" />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            {onOpenWelcomeNote && (
+          {/* TAGLINE */}
+          <p className="hero-tagline mt-5">
+            Curious by nature.&nbsp;&nbsp;Builder by choice.
+          </p>
+
+          {/* SUBTITLE */}
+          <p className="hero-subtitle mt-2">
+            Computer Science Engineer&nbsp;
+            <span className="hero-subtitle-sep" aria-hidden="true">|</span>
+            &nbsp;AI &amp; Full-Stack Developer
+          </p>
+
+          {/* SKILL TAGS */}
+          <div className="inline-flex items-center gap-2.5 text-[11px] font-mono text-cyan-400/70 tracking-[0.25em] mt-3">
+            <span>AI</span>
+            <span className="text-slate-700">//</span>
+            <span>FULL&nbsp;STACK</span>
+            <span className="text-slate-700">//</span>
+            <span>CLOUD</span>
+          </div>
+
+          {/* PRIMARY CTAs */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            {onScrollToContent && (
               <button
-                onClick={onOpenWelcomeNote}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-cyan-400/60 bg-cyan-950/70 hover:bg-cyan-900/80 text-xs font-mono text-cyan-300 transition-all backdrop-blur-md cursor-pointer hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                id="hero-cta-explore"
+                onClick={onScrollToContent}
+                className="hero-cta-primary"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Read Full Welcome Note</span>
+                Explore My Work
               </button>
             )}
 
-            <button
-              onClick={() => setIsJapanese(!isJapanese)}
-              className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/80 hover:border-cyan-500/50 text-xs font-mono text-slate-300 hover:text-white transition-all backdrop-blur-md cursor-pointer"
-              title="Toggle English / Japanese"
+            <a
+              id="hero-cta-github"
+              href="https://github.com/naiknabnit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-cta-secondary"
             >
-              Switch {isJapanese ? 'English (NABNIT)' : 'Japanese (ナブニット)'}
-            </button>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>
+              View GitHub
+            </a>
 
             <button
-              onClick={scrollToPhase2}
-              className="px-5 py-2 rounded-full border border-cyan-400/40 bg-cyan-500/15 hover:bg-cyan-500/30 text-xs font-mono text-cyan-200 transition-all backdrop-blur-md cursor-pointer hover:shadow-[0_0_20px_rgba(6,182,212,0.35)]"
+              onClick={() => setIsJapanese(!isJapanese)}
+              className="px-3.5 py-1.5 rounded-full border border-slate-700/70 bg-slate-900/60 hover:border-cyan-500/40 text-[11px] font-mono text-slate-400 hover:text-slate-200 transition-all backdrop-blur-md cursor-pointer"
+              title="Toggle English / Japanese name"
             >
-              Scroll to Motto ↓
+              {isJapanese ? 'EN · NABNIT' : 'JP · ナブニット'}
             </button>
+
+            {onOpenWelcomeNote && (
+              <button
+                onClick={onOpenWelcomeNote}
+                className="px-3.5 py-1.5 rounded-full border border-slate-700/50 bg-slate-900/40 hover:border-indigo-500/40 text-[11px] font-mono text-slate-400 hover:text-slate-200 transition-all backdrop-blur-md cursor-pointer"
+              >
+                <HeartHandshake className="w-3 h-3 inline mr-1 text-indigo-400" />
+                Welcome Note
+              </button>
+            )}
           </div>
         </div>
 
@@ -645,19 +781,43 @@ export const Component: React.FC<HorizonHeroProps> = ({
             </span>
           </div>
 
-          {/* Action CTA */}
-          <div className="mt-8 flex items-center justify-center gap-4">
+          {/* Action CTAs */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             {onScrollToContent && (
-              <button 
+              <button
+                id="hero-p2-explore"
                 onClick={onScrollToContent}
-                className="px-7 py-3 rounded-full border border-cyan-400/60 bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-100 text-sm font-mono tracking-wide transition-all duration-300 backdrop-blur-md cursor-pointer hover:shadow-[0_0_35px_rgba(6,182,212,0.5)] hover:scale-105"
+                className="hero-cta-primary"
               >
-                Explore Portfolio & Repositories ↓
+                <Sparkles className="w-3.5 h-3.5" />
+                Explore My Work
               </button>
             )}
+            <a
+              id="hero-p2-github"
+              href="https://github.com/naiknabnit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-cta-secondary"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>
+              View GitHub
+            </a>
           </div>
         </div>
       </div>
+
+      {/* ========================================================
+          CINEMATIC HORIZON SCAN-LINE (bottom glow strip)
+          ======================================================== */}
+      <div
+        className={`hero-horizon-scanline transition-opacity duration-[1500ms] ${
+          scrollProgress > 0.85 ? 'opacity-0' : 'opacity-100'
+        }`}
+        aria-hidden="true"
+      />
 
       {/* ========================================================
           21st.dev STYLE INTERACTIVE SCROLL ANIMATION INDICATOR
